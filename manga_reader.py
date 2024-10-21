@@ -10,7 +10,7 @@ class MangaReader(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Right-to-Left Manga Reader")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(0, 0, 900, 1350)
 
         # Initialize variables
         self.images = []
