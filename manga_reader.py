@@ -16,133 +16,138 @@ class MangaReader(QWidget):
         self.current_index = 0
         self.dark_mode = False
 
-        # Set up UI
+        # Set up UI components
         self.layout = QVBoxLayout()
+        self.init_ui()
+        self.set_button_stylesheet()
 
-        # Image label setup
+        # Load images from a folder
+        self.load_images()
+
+    def init_ui(self):
+        """Initialize the UI layout and components."""
+        # Image display label
         self.image_label = QLabel(alignment=Qt.AlignCenter)
-        self.image_label.setScaledContents(True)  # Enable dynamic scaling
+        self.image_label.setScaledContents(True)
         self.layout.addWidget(self.image_label, stretch=1)
 
         # Create a horizontal layout for buttons
-        self.btn_layout = QHBoxLayout()
+        btn_layout = QHBoxLayout()
 
-        # Next button on the left, moving forward
-        self.next_button = QPushButton("Next")
-        self.next_button.clicked.connect(self.show_next_image)
-        self.next_button.setFocusPolicy(Qt.NoFocus)  # Disable focus
-        self.btn_layout.addWidget(self.next_button)
+        # Next and Previous buttons for navigation
+        self.next_button = self.create_button("Next", self.show_next_image)
+        btn_layout.addWidget(self.next_button)
 
-        # Previous button on the right, moving backward
-        self.prev_button = QPushButton("Previous")
-        self.prev_button.clicked.connect(self.show_previous_image)
-        self.prev_button.setFocusPolicy(Qt.NoFocus)  # Disable focus
-        self.btn_layout.addWidget(self.prev_button)
+        self.prev_button = self.create_button(
+            "Previous", self.show_previous_image)
+        btn_layout.addWidget(self.prev_button)
 
-        # Dark mode toggle button
-        self.dark_mode_button = QPushButton("Toggle Dark Mode")
-        self.dark_mode_button.clicked.connect(self.toggle_dark_mode)
-        self.dark_mode_button.setFocusPolicy(Qt.NoFocus)  # Disable focus
-        self.btn_layout.addWidget(self.dark_mode_button)
+        # Dark Mode toggle button
+        self.dark_mode_button = self.create_button(
+            "Toggle Dark Mode", self.toggle_dark_mode)
+        btn_layout.addWidget(self.dark_mode_button)
 
         # Add the button layout at the bottom
-        self.layout.addLayout(self.btn_layout)
+        self.layout.addLayout(btn_layout)
 
         # Status bar to show current page info
         self.status_bar = QStatusBar()
         self.layout.addWidget(self.status_bar)
 
+        # Set the main layout
         self.setLayout(self.layout)
 
-        # Set button stylesheet to keep text black
-        self.set_button_stylesheet()
-
-        # Load images
-        self.load_images()
+    def create_button(self, text, function):
+        """Create a button with specified text and function."""
+        button = QPushButton(text)
+        button.clicked.connect(function)
+        button.setFocusPolicy(Qt.NoFocus)
+        return button
 
     def set_button_stylesheet(self):
-        # Set a stylesheet to keep the button text black
-        button_style = """
-            QPushButton {
-                color: black;
-            }
-        """
+        """Set a common stylesheet for all buttons."""
+        button_style = "QPushButton { color: black; }"
         self.next_button.setStyleSheet(button_style)
         self.prev_button.setStyleSheet(button_style)
         self.dark_mode_button.setStyleSheet(button_style)
 
     def load_images(self):
+        """Load images from a selected folder."""
         folder = QFileDialog.getExistingDirectory(self, "Select Volume Folder")
         if folder:
             # Load images and sort in natural order
-            self.images = sorted([os.path.join(folder, img)
-                                  for img in os.listdir(folder)
+            self.images = sorted([os.path.join(folder, img) for img in os.listdir(folder)
                                   if img.lower().endswith(('.jpg', '.jpeg', '.png'))])
             if self.images:
                 self.current_index = 0  # Start from the first page
                 self.show_image(self.current_index)
 
     def show_image(self, index):
+        """Display the image at the specified index."""
         if 0 <= index < len(self.images):
-            pixmap = QPixmap(self.images[index])
-            self.display_pixmap(pixmap)
-            self.current_index = index
-            self.update_status_bar()
+            try:
+                pixmap = QPixmap(self.images[index])
+                self.display_pixmap(pixmap)
+                self.current_index = index
+                self.update_status_bar()
+            except Exception as e:
+                self.status_bar.showMessage(f"Error loading image: {e}")
 
     def display_pixmap(self, pixmap):
-        # Resize pixmap to fit the label while maintaining the aspect ratio
+        """Resize pixmap to fit label while maintaining aspect ratio."""
         scaled_pixmap = pixmap.scaled(
             self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(scaled_pixmap)
 
     def resizeEvent(self, event):
-        # Re-display the current image to adjust to new window size
+        """Adjust the image display when the window is resized."""
         if self.images:
             pixmap = QPixmap(self.images[self.current_index])
             self.display_pixmap(pixmap)
 
-    def show_next_image(self):  # Move forward
+    def show_next_image(self):
+        """Move forward to the next image."""
         if self.current_index < len(self.images) - 1:
             self.show_image(self.current_index + 1)
 
-    def show_previous_image(self):  # Move backward
+    def show_previous_image(self):
+        """Move backward to the previous image."""
         if self.current_index > 0:
             self.show_image(self.current_index - 1)
 
     def keyPressEvent(self, event):
-        # Override key press event for arrow key navigation
+        """Override key press events for left/right arrow navigation."""
         if event.key() == Qt.Key_Left:  # Left arrow moves forward (next)
             self.show_next_image()
         elif event.key() == Qt.Key_Right:  # Right arrow moves backward (previous)
             self.show_previous_image()
 
     def update_status_bar(self):
+        """Update status bar with the current page information."""
         self.status_bar.showMessage(
             f"Page {self.current_index + 1} of {len(self.images)}")
 
     def toggle_dark_mode(self):
+        """Toggle between light and dark modes."""
         if self.dark_mode:
             self.set_light_mode()
         else:
             self.set_dark_mode()
 
     def set_dark_mode(self):
-        palette = QPalette()
-        palette.setColor(QPalette.Window, QColor(53, 53, 53))
-        palette.setColor(QPalette.WindowText, Qt.white)
-        palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-        palette.setColor(QPalette.ToolTipBase, Qt.white)
-        palette.setColor(QPalette.ToolTipText, Qt.white)
-        palette.setColor(QPalette.Text, Qt.white)
-        palette.setColor(QPalette.Button, QColor(53, 53, 53))
-        palette.setColor(QPalette.BrightText, Qt.red)
-
-        self.setPalette(palette)
+        """Apply dark mode color palette."""
+        dark_palette = QPalette()
+        dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.WindowText, Qt.white)
+        dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        dark_palette.setColor(QPalette.Text, Qt.white)
+        dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        self.setPalette(dark_palette)
         self.dark_mode = True
 
     def set_light_mode(self):
-        self.setPalette(QApplication.palette())  # Reset to default palette
+        """Reset to the default light mode."""
+        self.setPalette(QApplication.palette())
         self.dark_mode = False
 
 
