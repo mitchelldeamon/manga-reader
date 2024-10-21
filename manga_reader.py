@@ -1,6 +1,6 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar, QSpacerItem, QSizePolicy
 from PyQt5.QtGui import QPixmap, QPalette, QColor
 from PyQt5.QtCore import Qt
 
@@ -18,9 +18,13 @@ class MangaReader(QWidget):
 
         # Set up UI
         self.layout = QVBoxLayout()
-        self.image_label = QLabel(alignment=Qt.AlignCenter)
-        self.layout.addWidget(self.image_label)
 
+        # Image label setup
+        self.image_label = QLabel(alignment=Qt.AlignCenter)
+        self.image_label.setScaledContents(True)  # Enable dynamic scaling
+        self.layout.addWidget(self.image_label, stretch=1)
+
+        # Create a horizontal layout for buttons
         self.btn_layout = QHBoxLayout()
 
         # Next button on the left, moving forward
@@ -33,12 +37,13 @@ class MangaReader(QWidget):
         self.prev_button.clicked.connect(self.show_previous_image)
         self.btn_layout.addWidget(self.prev_button)
 
-        self.layout.addLayout(self.btn_layout)
-
         # Dark mode toggle button
         self.dark_mode_button = QPushButton("Toggle Dark Mode")
         self.dark_mode_button.clicked.connect(self.toggle_dark_mode)
-        self.layout.addWidget(self.dark_mode_button)
+        self.btn_layout.addWidget(self.dark_mode_button)
+
+        # Add the button layout at the bottom
+        self.layout.addLayout(self.btn_layout)
 
         # Status bar to show current page info
         self.status_bar = QStatusBar()
@@ -77,10 +82,21 @@ class MangaReader(QWidget):
     def show_image(self, index):
         if 0 <= index < len(self.images):
             pixmap = QPixmap(self.images[index])
-            self.image_label.setPixmap(pixmap.scaled(
-                self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.display_pixmap(pixmap)
             self.current_index = index
             self.update_status_bar()
+
+    def display_pixmap(self, pixmap):
+        # Resize pixmap to fit the label while maintaining the aspect ratio
+        scaled_pixmap = pixmap.scaled(
+            self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_label.setPixmap(scaled_pixmap)
+
+    def resizeEvent(self, event):
+        # Re-display the current image to adjust to new window size
+        if self.images:
+            pixmap = QPixmap(self.images[self.current_index])
+            self.display_pixmap(pixmap)
 
     def show_next_image(self):  # Move forward
         if self.current_index < len(self.images) - 1:
