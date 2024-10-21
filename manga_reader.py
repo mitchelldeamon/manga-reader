@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar
 from PyQt5.QtGui import QPixmap, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -72,12 +73,15 @@ class MangaReader(QWidget):
         self.dark_mode_button.setStyleSheet(button_style)
 
     def load_images(self):
-        """Load images from a selected folder."""
+        """Load images from a selected folder and sort them numerically."""
         folder = QFileDialog.getExistingDirectory(self, "Select Volume Folder")
         if folder:
-            # Load images and sort in natural order
-            self.images = sorted([os.path.join(folder, img) for img in os.listdir(folder)
-                                  if img.lower().endswith(('.jpg', '.jpeg', '.png'))])
+            # Load images and sort them by numeric page order
+            self.images = sorted(
+                [os.path.join(folder, img) for img in os.listdir(folder)
+                 if img.lower().endswith('.jpg')],
+                key=lambda x: int(re.search(r'page_(\d+)', x).group(1))
+            )
             if self.images:
                 self.current_index = 0  # Start from the first page
                 self.show_image(self.current_index)
