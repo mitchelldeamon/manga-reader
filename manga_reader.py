@@ -1,6 +1,6 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar, QSpacerItem, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar
 from PyQt5.QtGui import QPixmap, QPalette, QColor
 from PyQt5.QtCore import Qt
 
@@ -30,16 +30,19 @@ class MangaReader(QWidget):
         # Next button on the left, moving forward
         self.next_button = QPushButton("Next")
         self.next_button.clicked.connect(self.show_next_image)
+        self.next_button.setFocusPolicy(Qt.NoFocus)  # Disable focus
         self.btn_layout.addWidget(self.next_button)
 
         # Previous button on the right, moving backward
         self.prev_button = QPushButton("Previous")
         self.prev_button.clicked.connect(self.show_previous_image)
+        self.prev_button.setFocusPolicy(Qt.NoFocus)  # Disable focus
         self.btn_layout.addWidget(self.prev_button)
 
         # Dark mode toggle button
         self.dark_mode_button = QPushButton("Toggle Dark Mode")
         self.dark_mode_button.clicked.connect(self.toggle_dark_mode)
+        self.dark_mode_button.setFocusPolicy(Qt.NoFocus)  # Disable focus
         self.btn_layout.addWidget(self.dark_mode_button)
 
         # Add the button layout at the bottom
@@ -107,9 +110,10 @@ class MangaReader(QWidget):
             self.show_image(self.current_index - 1)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Right:  # Move forward
+        # Override key press event for arrow key navigation
+        if event.key() == Qt.Key_Left:  # Left arrow moves forward (next)
             self.show_next_image()
-        elif event.key() == Qt.Key_Left:  # Move backward
+        elif event.key() == Qt.Key_Right:  # Right arrow moves backward (previous)
             self.show_previous_image()
 
     def update_status_bar(self):
