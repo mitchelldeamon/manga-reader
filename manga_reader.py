@@ -20,10 +20,9 @@ class MangaReader(QWidget):
         # Set up UI components
         self.layout = QVBoxLayout()
         self.init_ui()
-        self.set_button_stylesheet()
 
-        # Load images from a folder
-        self.load_images()
+        # Set the main layout
+        self.setLayout(self.layout)
 
     def init_ui(self):
         """Initialize the UI layout and components."""
@@ -35,18 +34,19 @@ class MangaReader(QWidget):
         # Create a horizontal layout for buttons
         btn_layout = QHBoxLayout()
 
-        # Next and Previous buttons for navigation
-        self.next_button = self.create_button("Next", self.show_next_image)
-        btn_layout.addWidget(self.next_button)
+        # Load Images button
+        load_button = self.create_button(
+            "Choose Volume or Chapter", self.load_images)
+        btn_layout.addWidget(load_button)
 
-        self.prev_button = self.create_button(
-            "Previous", self.show_previous_image)
-        btn_layout.addWidget(self.prev_button)
+        # Next and Previous buttons for navigation
+        btn_layout.addWidget(self.create_button("Next", self.show_next_image))
+        btn_layout.addWidget(self.create_button(
+            "Previous", self.show_previous_image))
 
         # Dark Mode toggle button
-        self.dark_mode_button = self.create_button(
-            "Toggle Dark Mode", self.toggle_dark_mode)
-        btn_layout.addWidget(self.dark_mode_button)
+        btn_layout.addWidget(self.create_button(
+            "Toggle Dark Mode", self.toggle_dark_mode))
 
         # Add the button layout at the bottom
         self.layout.addLayout(btn_layout)
@@ -55,22 +55,13 @@ class MangaReader(QWidget):
         self.status_bar = QStatusBar()
         self.layout.addWidget(self.status_bar)
 
-        # Set the main layout
-        self.setLayout(self.layout)
-
     def create_button(self, text, function):
         """Create a button with specified text and function."""
         button = QPushButton(text)
         button.clicked.connect(function)
+        button.setStyleSheet("QPushButton { color: black; }")
         button.setFocusPolicy(Qt.NoFocus)
         return button
-
-    def set_button_stylesheet(self):
-        """Set a common stylesheet for all buttons."""
-        button_style = "QPushButton { color: black; }"
-        self.next_button.setStyleSheet(button_style)
-        self.prev_button.setStyleSheet(button_style)
-        self.dark_mode_button.setStyleSheet(button_style)
 
     def load_images(self):
         """Load images from a selected folder and sort them numerically."""
@@ -105,7 +96,7 @@ class MangaReader(QWidget):
 
     def resizeEvent(self, event):
         """Adjust the image display when the window is resized."""
-        if self.images:
+        if self.images:  # Ensure images are loaded
             pixmap = QPixmap(self.images[self.current_index])
             self.display_pixmap(pixmap)
 
@@ -133,26 +124,17 @@ class MangaReader(QWidget):
 
     def toggle_dark_mode(self):
         """Toggle between light and dark modes."""
-        if self.dark_mode:
-            self.set_light_mode()
-        else:
-            self.set_dark_mode()
-
-    def set_dark_mode(self):
-        """Apply dark mode color palette."""
         dark_palette = QPalette()
-        dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
-        dark_palette.setColor(QPalette.WindowText, Qt.white)
-        dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        dark_palette.setColor(QPalette.Text, Qt.white)
-        dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
-        self.setPalette(dark_palette)
-        self.dark_mode = True
-
-    def set_light_mode(self):
-        """Reset to the default light mode."""
-        self.setPalette(QApplication.palette())
-        self.dark_mode = False
+        if self.dark_mode:
+            self.setPalette(QApplication.palette())  # Light mode
+        else:
+            dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+            dark_palette.setColor(QPalette.WindowText, Qt.white)
+            dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+            dark_palette.setColor(QPalette.Text, Qt.white)
+            dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+            self.setPalette(dark_palette)  # Dark mode
+        self.dark_mode = not self.dark_mode
 
 
 if __name__ == "__main__":
