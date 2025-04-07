@@ -67,11 +67,12 @@ class MangaReader(QWidget):
         """Load images from a selected folder and sort them numerically."""
         folder = QFileDialog.getExistingDirectory(self, "Select Volume Folder")
         if folder:
-            # Load images and sort them by numeric page order
+            # Include both .jpg and .png images
             self.images = sorted(
                 [os.path.join(folder, img) for img in os.listdir(folder)
-                 if img.lower().endswith('.jpg')],
-                key=lambda x: int(re.search(r'page_(\d+)', x).group(1))
+                 if img.lower().endswith(('.jpg', '.png'))],
+                key=lambda x: int(re.search(r'page_(\d+)', x).group(1)
+                                  ) if re.search(r'page_(\d+)', x) else float('inf')
             )
             if self.images:
                 self.current_index = 0  # Start from the first page
