@@ -5,6 +5,7 @@ import natsort
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar
 from PyQt5.QtGui import QPixmap, QPalette, QColor
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QLineEdit
 
 
 class MangaReader(QWidget):
@@ -44,6 +45,17 @@ class MangaReader(QWidget):
         btn_layout.addWidget(self.create_button("Next", self.show_next_image))
         btn_layout.addWidget(self.create_button(
             "Previous", self.show_previous_image))
+
+        # Jump to Page input
+        self.page_input = QLineEdit()
+        self.page_input.setPlaceholderText("Jump to page #")
+        self.page_input.setFixedWidth(100)
+        btn_layout.addWidget(self.page_input)
+
+        # Jump button
+        jump_btn = QPushButton("Go")
+        jump_btn.clicked.connect(self.jump_to_page)
+        btn_layout.addWidget(jump_btn)
 
         # Dark Mode toggle button
         btn_layout.addWidget(self.create_button(
@@ -148,6 +160,18 @@ class MangaReader(QWidget):
             dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
             self.setPalette(dark_palette)  # Dark mode
         self.dark_mode = not self.dark_mode
+
+    def jump_to_page(self):
+        """Jump to a specific page based on user input."""
+        try:
+            page = int(self.page_input.text()) - 1  # Convert to 0-based index
+            if 0 <= page < len(self.images):
+                self.show_image(page)
+            else:
+                self.status_bar.showMessage(
+                    f"Page {page + 1} is out of range.")
+        except ValueError:
+            self.status_bar.showMessage("Invalid page number.")
 
 
 if __name__ == "__main__":
