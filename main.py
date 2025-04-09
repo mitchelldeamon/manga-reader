@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import natsort
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar
 from PyQt5.QtGui import QPixmap, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -63,19 +64,30 @@ class MangaReader(QWidget):
         button.setFocusPolicy(Qt.NoFocus)
         return button
 
+    # Add this at the top of your file (requires installing the natsort package)
+    import natsort
+
     def load_images(self):
-        """Load images from a selected folder and sort them numerically."""
-        folder = QFileDialog.getExistingDirectory(self, "Select Volume Folder")
-        if folder:
-            # Include both .jpg and .png images
-            self.images = sorted(
-                [os.path.join(folder, img) for img in os.listdir(folder)
-                 if img.lower().endswith(('.jpg', '.png'))],
-                key=lambda x: int(re.search(r'page_(\d+)', x).group(1)
-                                  ) if re.search(r'page_(\d+)', x) else float('inf')
-            )
+        """Load images from multiple folders and sort them by chapter and page number."""
+        parent_folder = QFileDialog.getExistingDirectory(
+            self, "Select Parent Folder Containing Chapters")
+        if parent_folder:
+            image_extensions = ('.jpg', '.png')
+            all_images = []
+
+            # Walk through all subfolders
+            for root, dirs, files in os.walk(parent_folder):
+                for file in files:
+                    if file.lower().endswith(image_extensions):
+                        full_path = os.path.join(root, file)
+                        all_images.append(full_path)
+
+            # Sort naturally by chapter and page number (e.g., Chapter_1/page_1.jpg)
+            self.images = natsort.natsorted(
+                all_images, alg=natsort.ns.IGNORECASE)
+
             if self.images:
-                self.current_index = 0  # Start from the first page
+                self.current_index = 0
                 self.show_image(self.current_index)
 
     def show_image(self, index):
