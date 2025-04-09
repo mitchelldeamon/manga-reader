@@ -2,6 +2,8 @@ import sys
 import os
 import re
 import natsort
+import json
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog, QHBoxLayout, QStatusBar
 from PyQt5.QtGui import QPixmap, QPalette, QColor
 from PyQt5.QtCore import Qt
@@ -25,6 +27,9 @@ class MangaReader(QWidget):
 
         # Set the main layout
         self.setLayout(self.layout)
+
+        # Removed self.history_key from here (it's now set in load_images)
+        self.reading_history = {}
 
     def init_ui(self):
         """Initialize the UI layout and components."""
@@ -76,31 +81,45 @@ class MangaReader(QWidget):
         button.setFocusPolicy(Qt.NoFocus)
         return button
 
-    # Add this at the top of your file (requires installing the natsort package)
-    import natsort
-
     def load_images(self):
-        """Load images from multiple folders and sort them by chapter and page number."""
+        """Load images from multiple folders and load/save history per manga root."""
         parent_folder = QFileDialog.getExistingDirectory(
-            self, "Select Parent Folder Containing Chapters")
-        if parent_folder:
-            image_extensions = ('.jpg', '.png')
-            all_images = []
+            self, "Select Manga Folder Containing Chapters")
+        if not parent_folder:
+            return
 
-            # Walk through all subfolders
-            for root, dirs, files in os.walk(parent_folder):
-                for file in files:
-                    if file.lower().endswith(image_extensions):
-                        full_path = os.path.join(root, file)
-                        all_images.append(full_path)
+        # Set the manga-specific history file and history key
+        self.history_key = parent_folder  # Set history_key here
+        self.history_file = os.path.join(parent_folder, "reading_history.json")
 
-            # Sort naturally by chapter and page number (e.g., Chapter_1/page_1.jpg)
-            self.images = natsort.natsorted(
-                all_images, alg=natsort.ns.IGNORECASE)
+        image_extensions = ('.jpg', '.png')
+        all_images = []
 
-            if self.images:
+        # Walk through all subfolders to collect images
+        for root, dirs, files in os.walk(parent_folder):
+            for file in files:
+                if file.lower().endswith(image_extensions):
+                    all_images.append(os.path.join(root, file))
+
+        self.images = natsort.natsorted(all_images, alg=natsort.ns.IGNORECASE)
+
+        # Load the history specific to this manga root folder
+        self.reading_history = self.load_reading_history()
+
+        if self.images:
+            first_image_folder = os.path.dirname(self.images[0])
+            if self.history_key in self.reading_history:
+                saved_index = self.reading_history[self.history_key]
+                resume = QMessageBox.question(
+                    self, "Resume Reading?",
+                    f"Resume from page {saved_index + 1}?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                self.current_index = saved_index if resume == QMessageBox.Yes else 0
+            else:
                 self.current_index = 0
-                self.show_image(self.current_index)
+
+            self.show_image(self.current_index)
 
     def show_image(self, index):
         """Display the image at the specified index."""
@@ -110,6 +129,7 @@ class MangaReader(QWidget):
                 self.display_pixmap(pixmap)
                 self.current_index = index
                 self.update_status_bar()
+                self.save_reading_history()  # 🔥 Save after displaying
             except Exception as e:
                 self.status_bar.showMessage(f"Error loading image: {e}")
 
@@ -172,6 +192,26 @@ class MangaReader(QWidget):
                     f"Page {page + 1} is out of range.")
         except ValueError:
             self.status_bar.showMessage("Invalid page number.")
+
+    def load_reading_history(self):
+        """Load reading history from a JSON file."""
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, 'r') as file:
+                    return json.load(file)
+            except Exception:
+                return {}
+        return {}
+
+    def save_reading_history(self):
+        """Save the current page index using the manga root folder as key."""
+        if self.images:
+            self.reading_history[self.history_key] = self.current_index
+            try:
+                with open(self.history_file, 'w') as file:
+                    json.dump(self.reading_history, file, indent=4)
+            except Exception as e:
+                self.status_bar.showMessage(f"Error saving history: {e}")
 
 
 if __name__ == "__main__":
