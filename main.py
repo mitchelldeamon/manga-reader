@@ -51,16 +51,16 @@ class MangaReader(QWidget):
         btn_layout.addWidget(self.create_button(
             "Previous", self.show_previous_image))
 
-        # Jump to Page input
-        self.page_input = QLineEdit()
-        self.page_input.setPlaceholderText("Jump to page #")
-        self.page_input.setFixedWidth(100)
-        btn_layout.addWidget(self.page_input)
+        # # Jump to Page input
+        # self.page_input = QLineEdit()
+        # self.page_input.setPlaceholderText("Jump to page #")
+        # self.page_input.setFixedWidth(100)
+        # btn_layout.addWidget(self.page_input)
 
-        # Jump button
-        jump_btn = QPushButton("Go")
-        jump_btn.clicked.connect(self.jump_to_page)
-        btn_layout.addWidget(jump_btn)
+        # # Jump button
+        # jump_btn = QPushButton("Go")
+        # jump_btn.clicked.connect(self.jump_to_page)
+        # btn_layout.addWidget(jump_btn)
 
         # Dark Mode toggle button
         btn_layout.addWidget(self.create_button(
@@ -192,6 +192,9 @@ class MangaReader(QWidget):
                     f"Page {page + 1} is out of range.")
         except ValueError:
             self.status_bar.showMessage("Invalid page number.")
+
+        # Remove focus from the input field after jumping to the page
+        self.page_input.clearFocus()
 
     def load_reading_history(self):
         """Load reading history from a JSON file."""
